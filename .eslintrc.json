@@ -13,8 +13,7 @@
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint",
-        "prettier"
+        "@typescript-eslint"
     ],
     "rules": {
         "import/extensions": [
@@ -24,7 +23,7 @@
                 "js": "never",
                 "ts": "never"
             }
-        ],
+        ]
     },
     "settings": {
         "import/resolver": {
