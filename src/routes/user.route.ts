@@ -7,9 +7,10 @@ const router = Router();
 
 router.post('/signup', controller.signup);
 router.post('/login', controller.login);
-router.post('/', controller.login);
+router.post('/', controller.create);
 
-router.get('/:id', controller.get);
+router.get('/:id', controller.getById);
+router.get('/:cpf', controller.getByCpf);
 router.get('/', controller.list);
 
 router.put('/:id', controller.update);
