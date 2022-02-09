@@ -3,22 +3,26 @@
 
 import { Response } from 'express';
 
-const success = (res: Response, status: number, data: Object | null): void => {
+const success = (
+  res: Response,
+  status: number,
+  data: Object | null
+): Response => {
   const response = {
     status: 'success',
     data,
   };
 
-  res.status(status).json(response);
+  return res.status(status).json(response);
 };
 
-const fail = (res: Response, status: number, data: Object | null): void => {
+const fail = (res: Response, status: number, data: Object | null): Response => {
   const response = {
     status: 'fail',
     data,
   };
 
-  res.status(status).json(response);
+  return res.status(status).json(response);
 };
 
 type JsendOptional = {
@@ -30,7 +34,7 @@ const error = (
   status: number,
   message: string,
   optional: JsendOptional | null = null
-): void => {
+): Response => {
   let response = {};
   if (optional) {
     const { code, data } = optional;
@@ -47,7 +51,7 @@ const error = (
     };
   }
 
-  res.status(status).json(response);
+  return res.status(status).json(response);
 };
 
 export { success, fail, error };
