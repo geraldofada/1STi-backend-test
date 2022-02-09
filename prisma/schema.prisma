@@ -25,11 +25,12 @@ model Address {
   user       User     @relation(fields: [userId], references: [id])
   userId     String
   cep        String   @db.Char(8)
-  line_1     String
+  line1     String
   number     String
-  line_2     String
+  line2     String?
   state      String   @db.Char(2)
   city       String
+  district   String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
