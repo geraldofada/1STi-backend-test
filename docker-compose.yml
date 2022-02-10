@@ -1,15 +1,38 @@
 version: '3.1'
 
 services: 
+    dev:
+        build: .
+        depends_on:
+            - postgres
+            - redis
+        volumes:
+            - .:/usr/src/app
+            - node_modules:/usr/src/app/node_modules
+        expose:
+            - 9229
+        ports:
+            - 8080:8080
+            - 9229:9229
+        command: bash -c "npx prisma migrate dev --skip-generate && npm run dev"
+
     postgres:
         image: postgres
-        restart: always
         environment:
             POSTGRES_PASSWORD: senha123
+            POSTGRES_DB: 1STi_dev
         ports: 
             - 5432:5432
+
     redis:
         image: redis
-        restart: always
         ports:
             - 6379:6379
+
+volumes:
+    node_modules:
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ./node_modules
