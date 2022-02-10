@@ -22,12 +22,12 @@ model User {
 
 model Address {
   id         String   @id @default(uuid())
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId     String
   cep        String   @db.Char(8)
-  line1     String
+  line1      String
   number     String
-  line2     String?
+  line2      String?
   state      String   @db.Char(2)
   city       String
   district   String
