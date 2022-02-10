@@ -1,7 +1,11 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prismaClient = new PrismaClient({
-  log: ["error", "info", "query", "warn"],
+  log:
+    process.env.NODE_ENV === 'development'
+      ? ['error', 'info', 'query', 'warn']
+      : ['info'],
+  errorFormat: 'minimal',
 });
 
 export default prismaClient;
