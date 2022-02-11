@@ -10,7 +10,7 @@ router.post('/login', controller.login);
 router.post('/', controller.create);
 
 router.get('/:id', controller.getById);
-router.get('/:cpf', controller.getByCpf);
+router.get('/cpf/:cpf', controller.getByCpf);
 router.get('/', controller.list);
 
 router.put('/:id', controller.update);
