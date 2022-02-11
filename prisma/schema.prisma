@@ -14,7 +14,7 @@ model User {
   name       String
   phone      String   @db.Char(11)
   password   String
-  addresses  Address[]
+  address    Address?
   roles      UserRole[]
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
