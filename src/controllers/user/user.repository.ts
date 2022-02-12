@@ -3,7 +3,7 @@ import prisma from '../../clients/prisma.client';
 
 type UserCreate = Prisma.UserCreateInput;
 
-type UserGet = { id: string } | { cpf: string };
+type UserGet = Prisma.UserWhereUniqueInput;
 
 type UserQuery = {
   cpf?: string;
@@ -59,16 +59,8 @@ const createUser = async (user: UserCreate) => {
 };
 
 const getUser = async (key: UserGet) => {
-  // NOTE(Geraldo): Vou deixar o where desse jeito
-  //                porque facilita a extração para depois,
-  //                caso precise usar o mesmo where em outras
-  //                queries.
-  const where = Prisma.validator<Prisma.UserWhereInput>()({
-    ...key,
-  });
-
   const user = await prisma.user.findUnique({
-    where,
+    where: key,
     select: userDefaultSelect.select,
   });
 
@@ -76,6 +68,10 @@ const getUser = async (key: UserGet) => {
 };
 
 const getUserList = async (query: UserQuery) => {
+  // NOTE(Geraldo): Vou deixar o where desse jeito
+  //                porque facilita a extração para depois,
+  //                caso precise usar o mesmo where em outras
+  //                queries.
   const where = Prisma.validator<Prisma.UserWhereInput>()({
     name: { contains: query.name },
     cpf: { contains: query.cpf },
@@ -111,14 +107,16 @@ type User =
   | Prisma.PromiseReturnType<typeof createUser>;
 type UserList = Prisma.PromiseReturnType<typeof getUserList>;
 
-export interface IUserRepository {
+interface IUserRepository {
   createUser: (user: UserCreate) => Promise<User>;
   getUser: (key: UserGet) => Promise<User>;
   getUserList: (query: UserQuery) => Promise<UserList>;
 }
 
-export const userRepository: IUserRepository = {
+const userRepository: IUserRepository = {
   createUser,
   getUser,
   getUserList,
 };
+
+export { IUserRepository, userRepository };
