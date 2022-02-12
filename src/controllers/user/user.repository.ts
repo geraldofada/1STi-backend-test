@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../clients/prisma.client';
 
+type UserCreate = Prisma.UserCreateInput;
+
 type UserGet = { id: string } | { cpf: string };
 
 type UserQuery = {
@@ -46,6 +48,15 @@ const userDefaultSelect = Prisma.validator<Prisma.UserArgs>()({
     },
   },
 });
+
+const createUser = async (user: UserCreate) => {
+  const userCreated = prisma.user.create({
+    data: user,
+    select: userDefaultSelect.select,
+  });
+
+  return userCreated;
+};
 
 const getUser = async (key: UserGet) => {
   // NOTE(Geraldo): Vou deixar o where desse jeito
@@ -95,17 +106,19 @@ const getUserList = async (query: UserQuery) => {
   return user;
 };
 
-type User = Prisma.PromiseReturnType<typeof getUser>;
+type User =
+  | Prisma.PromiseReturnType<typeof getUser>
+  | Prisma.PromiseReturnType<typeof createUser>;
 type UserList = Prisma.PromiseReturnType<typeof getUserList>;
 
-interface IUserRepository {
-  getUser: (where: UserGet) => Promise<User>;
-  getUserList: (where: UserQuery) => Promise<UserList>;
+export interface IUserRepository {
+  createUser: (user: UserCreate) => Promise<User>;
+  getUser: (key: UserGet) => Promise<User>;
+  getUserList: (query: UserQuery) => Promise<UserList>;
 }
 
-const userRepository: IUserRepository = {
+export const userRepository: IUserRepository = {
+  createUser,
   getUser,
   getUserList,
 };
-
-export default userRepository;
