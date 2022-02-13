@@ -37,7 +37,7 @@ model Address {
 
 model UserRole {
   id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String
   role   Role   @default(USER)
 }
