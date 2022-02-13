@@ -296,80 +296,8 @@ describe('User Controller', () => {
     roles: [mockRoleInfo],
   });
 
-  describe('[POST] 201 /user', () => {
-    const {
-      id: _id,
-      created_at: _created,
-      updated_at: _updated,
-      ...rest
-    } = mockUserInfo;
-
-    const createController = userController.createController(mockUserRepo);
-
-    const mockReq = mock<Request>();
-    const mockRes = mock<Response>();
-
-    mockRes.status.mockReturnThis();
-    mockRes.json.mockReturnThis();
-
-    mockReq.body = {
-      ...rest,
-      address: mockAddressInfo,
-      role: mockRoleInfo.role,
-    };
-
-    beforeAll(async () => {
-      await createController(mockReq, mockRes);
-    });
-
-    test('it should return 201 if an user was created', () => {
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-    });
-
-    test('it should return an user', () => {
-      expect(mockRes.json).toHaveBeenCalledWith({
-        status: 'success',
-        data: {
-          ...mockUserInfo,
-          address: mockAddressInfo,
-          roles: [mockRoleInfo],
-        },
-      });
-    });
-  });
-
-  describe('[POST] 400 /user', () => {
-    const createController = userController.createController(mockUserRepo);
-
-    const mockReq = mock<Request>();
-    const mockRes = mock<Response>();
-
-    mockRes.status.mockReturnThis();
-    mockRes.json.mockReturnThis();
-
-    mockReq.body = {
-      id: '1',
-    };
-
-    const { error } = userValidator.create.validate(mockReq.body);
-
-    beforeAll(async () => {
-      await createController(mockReq, mockRes);
-    });
-
-    test('it should return 400 if the validator have failed', () => {
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-    });
-
-    test('it should return an error message from Joi', () => {
-      expect(mockRes.json).toHaveBeenCalledWith({
-        status: 'fail',
-        data: error,
-      });
-    });
-
-    test('it should return 400 if a prisma validation error was thrown', async () => {
-      const mockReq2 = mock<Request>();
+  describe('[POST] /user', () => {
+    describe('201', () => {
       const {
         id: _id,
         created_at: _created,
@@ -377,53 +305,260 @@ describe('User Controller', () => {
         ...rest
       } = mockUserInfo;
 
-      mockReq2.body = {
+      const createController = userController.createController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
         ...rest,
         address: mockAddressInfo,
         role: mockRoleInfo.role,
       };
 
-      mockUserRepo.createUser.mockRejectedValueOnce(
-        new PrismaClientKnownRequestError(
-          'user create error',
-          'P2002',
-          'client version'
-        )
-      );
+      beforeAll(async () => {
+        await createController(mockReq, mockRes);
+      });
 
-      await createController(mockReq2, mockRes);
-      expect(mockRes.status).toHaveBeenLastCalledWith(400);
+      test('it should return 201 if an user was created', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(201);
+      });
+
+      test('it should return an user', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'success',
+          data: {
+            ...mockUserInfo,
+            address: mockAddressInfo,
+            roles: [mockRoleInfo],
+          },
+        });
+      });
+    });
+
+    describe('400', () => {
+      const createController = userController.createController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
+        id: '1',
+      };
+
+      const { error } = userValidator.create.validate(mockReq.body);
+
+      beforeAll(async () => {
+        await createController(mockReq, mockRes);
+      });
+
+      test('it should return 400 if the validator have failed', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+      });
+
+      test('it should return an error message from Joi', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'fail',
+          data: error,
+        });
+      });
+
+      test('it should return 400 if a prisma validation error was thrown', async () => {
+        const mockReq2 = mock<Request>();
+        const {
+          id: _id,
+          created_at: _created,
+          updated_at: _updated,
+          ...rest
+        } = mockUserInfo;
+
+        mockReq2.body = {
+          ...rest,
+          address: mockAddressInfo,
+          role: mockRoleInfo.role,
+        };
+
+        mockUserRepo.createUser.mockRejectedValueOnce(
+          new PrismaClientKnownRequestError(
+            'user create error',
+            'P2002',
+            'client version'
+          )
+        );
+
+        await createController(mockReq2, mockRes);
+        expect(mockRes.status).toHaveBeenLastCalledWith(400);
+      });
+    });
+
+    describe('500', () => {
+      const {
+        id: _id,
+        created_at: _created,
+        updated_at: _updated,
+        ...rest
+      } = mockUserInfo;
+
+      const createController = userController.createController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
+        ...rest,
+        address: mockAddressInfo,
+        role: mockRoleInfo.role,
+      };
+
+      test('it should return 500 if an Error was thrown', async () => {
+        mockUserRepo.createUser.mockRejectedValueOnce(
+          new Error('Internal error')
+        );
+        await createController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenCalledWith(500);
+      });
     });
   });
 
-  describe('[POST] 500 /user', () => {
-    const {
-      id: _id,
-      created_at: _created,
-      updated_at: _updated,
-      ...rest
-    } = mockUserInfo;
+  describe('[POST] /user/signup', () => {
+    describe('201', () => {
+      const {
+        id: _id,
+        created_at: _created,
+        updated_at: _updated,
+        ...rest
+      } = mockUserInfo;
 
-    const createController = userController.createController(mockUserRepo);
+      const signupController = userController.signupController(mockUserRepo);
 
-    const mockReq = mock<Request>();
-    const mockRes = mock<Response>();
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
 
-    mockRes.status.mockReturnThis();
-    mockRes.json.mockReturnThis();
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
 
-    mockReq.body = {
-      ...rest,
-      address: mockAddressInfo,
-      role: mockRoleInfo.role,
-    };
+      mockReq.body = {
+        ...rest,
+        passwordConfirmation: rest.password,
+        address: mockAddressInfo,
+      };
 
-    test('it should return 500 if an Error was thrown', async () => {
-      mockUserRepo.createUser.mockRejectedValueOnce(
-        new Error('Internal error')
-      );
-      await createController(mockReq, mockRes);
-      expect(mockRes.status).toHaveBeenCalledWith(500);
+      beforeAll(async () => {
+        await signupController(mockReq, mockRes);
+      });
+
+      test('it should return 201 if an user was created', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(201);
+      });
+
+      test('it should return an user', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'success',
+          data: {
+            ...mockUserInfo,
+            address: mockAddressInfo,
+            roles: [mockRoleInfo],
+          },
+        });
+      });
+    });
+
+    describe('400', () => {
+      const signupController = userController.signupController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
+        id: '1',
+      };
+
+      const { error } = userValidator.signup.validate(mockReq.body);
+
+      beforeAll(async () => {
+        await signupController(mockReq, mockRes);
+      });
+
+      test('it should return 400 if the validator have failed', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+      });
+
+      test('it should return an error message from Joi', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'fail',
+          data: error,
+        });
+      });
+
+      test('it should return 400 if a prisma validation error was thrown', async () => {
+        const mockReq2 = mock<Request>();
+        const {
+          id: _id,
+          created_at: _created,
+          updated_at: _updated,
+          ...rest
+        } = mockUserInfo;
+
+        mockReq2.body = {
+          ...rest,
+          passwordConfirmation: rest.password,
+          address: mockAddressInfo,
+        };
+
+        mockUserRepo.createUser.mockRejectedValueOnce(
+          new PrismaClientKnownRequestError(
+            'user create error',
+            'P2002',
+            'client version'
+          )
+        );
+
+        await signupController(mockReq2, mockRes);
+        expect(mockRes.status).toHaveBeenLastCalledWith(400);
+      });
+    });
+
+    describe('500', () => {
+      const {
+        id: _id,
+        created_at: _created,
+        updated_at: _updated,
+        ...rest
+      } = mockUserInfo;
+
+      const signupController = userController.signupController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
+        ...rest,
+        passwordConfirmation: rest.password,
+        address: mockAddressInfo,
+      };
+
+      test('it should return 500 if an Error was thrown', async () => {
+        mockUserRepo.createUser.mockRejectedValueOnce(
+          new Error('Internal error')
+        );
+        await signupController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenCalledWith(500);
+      });
     });
   });
 });
