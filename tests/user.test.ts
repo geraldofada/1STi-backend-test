@@ -2,7 +2,7 @@ import { Role } from '@prisma/client';
 import { Request, Response } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { v4 as uuid } from 'uuid';
-import { mock, mockClear } from 'jest-mock-extended';
+import { mock } from 'jest-mock-extended';
 
 import {
   userRepository,
@@ -35,6 +35,9 @@ describe('User Repository', () => {
     state: 'RJ',
   };
   const roleInfoTest1 = { role: Role.USER };
+
+  // NOTE(Geraldo): to mandando o updateAt pra conseguir comparar o resultado depois
+  const updatedAtTeste1 = new Date();
 
   const { password: _, ...rest } = userInfoTest1;
   const userReturnTest1 = {
@@ -195,14 +198,17 @@ describe('User Repository', () => {
     ).resolves.toEqual([userReturnTest1]);
   });
 
-  test('it should update and return the updated user', async () => {
-    // NOTE(Geraldo): to mandando o updateAt pra conseguir compara o resultado depois
-    const updatedAt = new Date();
+  test('it should return a list of users by address filtering', async () => {
+    await expect(
+      userRepository.getUserList({ cpf: userCpfTest1, cep: '09500005' })
+    ).resolves.toEqual([userReturnTest1]);
+  });
 
+  test('it should update and return the updated user', async () => {
     const userInfo = {
       name: 'Geraldo Update',
       email: 'teste29@teste.com',
-      updated_at: updatedAt,
+      updated_at: updatedAtTeste1,
     };
     const addressInfo = {
       cep: '09500009',
@@ -223,7 +229,7 @@ describe('User Repository', () => {
       ...restTest1,
       name: 'Geraldo Update',
       email: 'teste29@teste.com',
-      updated_at: updatedAt,
+      updated_at: updatedAtTeste1,
       address: {
         ...addressInfoTest1,
         cep: '09500009',
@@ -236,6 +242,27 @@ describe('User Repository', () => {
     await expect(userRepository.updateUser(userUpdateInput)).resolves.toEqual(
       userReturn
     );
+  });
+
+  test('it should delete an user and return the deleted record', async () => {
+    const { password: _pass1, ...restTest1 } = userInfoTest1;
+    const userReturn = {
+      ...restTest1,
+      name: 'Geraldo Update',
+      email: 'teste29@teste.com',
+      updated_at: updatedAtTeste1,
+      address: {
+        ...addressInfoTest1,
+        cep: '09500009',
+        line1: 'Rua la',
+        number: '111',
+      },
+      roles: [roleInfoTest1],
+    };
+
+    await expect(
+      userRepository.deleteUser({ id: userIdTest1 })
+    ).resolves.toEqual(userReturn);
   });
 });
 
