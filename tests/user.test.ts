@@ -568,7 +568,7 @@ describe('User Controller', () => {
   });
 
   describe('[GET] /user/:id', () => {
-    describe('201', () => {
+    describe('200', () => {
       const getByIdController = userController.getByIdController(mockUserRepo);
 
       const mockReq = mock<Request>();
@@ -656,6 +656,103 @@ describe('User Controller', () => {
       test('it should return 500 if an Error was thrown', async () => {
         mockUserRepo.getUser.mockRejectedValueOnce(new Error('Internal error'));
         await getByIdController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenCalledWith(500);
+      });
+    });
+  });
+
+  describe('[GET] /user/cpf/:cpf', () => {
+    describe('200', () => {
+      const getByCpfController =
+        userController.getByCpfController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        cpf: mockUserInfo.cpf,
+      };
+
+      beforeEach(async () => {
+        await getByCpfController(mockReq, mockRes);
+      });
+
+      test('it should return 200 if an user was returned', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'success',
+          data: {
+            ...mockUserInfo,
+            address: mockAddressInfo,
+            roles: [mockRoleInfo],
+          },
+        });
+      });
+
+      test('it should return 200 if no user was found', async () => {
+        mockUserRepo.getUser.mockResolvedValueOnce(null);
+
+        await getByCpfController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'success',
+          data: null,
+        });
+      });
+    });
+
+    describe('400', () => {
+      const getByCpfController =
+        userController.getByCpfController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        cpf: '1',
+      };
+
+      const { error } = userValidator.getByCpf.validate(mockReq.params);
+
+      beforeAll(async () => {
+        await getByCpfController(mockReq, mockRes);
+      });
+
+      test('it should return 400 if the validator have failed', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+      });
+
+      test('it should return an error message from Joi', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'fail',
+          data: error,
+        });
+      });
+    });
+
+    describe('500', () => {
+      const getByCpfController =
+        userController.getByCpfController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        cpf: mockUserInfo.cpf,
+      };
+
+      test('it should return 500 if an Error was thrown', async () => {
+        mockUserRepo.getUser.mockRejectedValueOnce(new Error('Internal error'));
+        await getByCpfController(mockReq, mockRes);
         expect(mockRes.status).toHaveBeenCalledWith(500);
       });
     });
