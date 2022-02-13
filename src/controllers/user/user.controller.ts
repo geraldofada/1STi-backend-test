@@ -215,7 +215,7 @@ const list = async (
       ...value,
     });
 
-    return jsend.success(res, 201, userList);
+    return jsend.success(res, 200, userList);
   } catch (err) {
     if (err instanceof Error) {
       return jsend.error(res, 500, 'An internal error occurred.', {
