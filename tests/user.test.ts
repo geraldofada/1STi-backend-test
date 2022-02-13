@@ -2,7 +2,7 @@ import { Role } from '@prisma/client';
 import { Request, Response } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { v4 as uuid } from 'uuid';
-import { mock, mockReset } from 'jest-mock-extended';
+import { mock, mockClear } from 'jest-mock-extended';
 
 import {
   userRepository,
@@ -295,11 +295,11 @@ describe('User Controller', () => {
       await createController(mockReq, mockRes);
     });
 
-    test('it should return 201 if an user was created', async () => {
+    test('it should return 201 if an user was created', () => {
       expect(mockRes.status).toHaveBeenCalledWith(201);
     });
 
-    test('it should return an user', async () => {
+    test('it should return an user', () => {
       expect(mockRes.json).toHaveBeenCalledWith({
         status: 'success',
         data: {
@@ -330,11 +330,11 @@ describe('User Controller', () => {
       await createController(mockReq, mockRes);
     });
 
-    test('it should return 400 if the validator have failed', async () => {
+    test('it should return 400 if the validator have failed', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
     });
 
-    test('it should return an error message from Joi', async () => {
+    test('it should return an error message from Joi', () => {
       expect(mockRes.json).toHaveBeenCalledWith({
         status: 'fail',
         data: error,
@@ -342,7 +342,7 @@ describe('User Controller', () => {
     });
 
     test('it should return 400 if a prisma validation error was thrown', async () => {
-      mockReset(mockReq);
+      const mockReq2 = mock<Request>();
       const {
         id: _id,
         created_at: _created,
@@ -350,7 +350,7 @@ describe('User Controller', () => {
         ...rest
       } = mockUserInfo;
 
-      mockReq.body = {
+      mockReq2.body = {
         ...rest,
         address: mockAddressInfo,
         role: mockRoleInfo.role,
@@ -363,7 +363,9 @@ describe('User Controller', () => {
           'client version'
         )
       );
-      expect(mockRes.status).toHaveBeenCalledWith(400);
+
+      await createController(mockReq2, mockRes);
+      expect(mockRes.status).toHaveBeenLastCalledWith(400);
     });
   });
 
@@ -389,14 +391,11 @@ describe('User Controller', () => {
       role: mockRoleInfo.role,
     };
 
-    beforeAll(async () => {
-      await createController(mockReq, mockRes);
-    });
-
     test('it should return 500 if an Error was thrown', async () => {
       mockUserRepo.createUser.mockRejectedValueOnce(
         new Error('Internal error')
       );
+      await createController(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(500);
     });
   });
