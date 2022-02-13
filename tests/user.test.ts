@@ -2,7 +2,7 @@ import { Role } from '@prisma/client';
 import { Request, Response } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { v4 as uuid } from 'uuid';
-import { mock, mockDeep } from 'jest-mock-extended';
+import { mock, mockReset } from 'jest-mock-extended';
 
 import {
   userRepository,
@@ -10,6 +10,7 @@ import {
 } from '../src/controllers/user/user.repository';
 
 import * as userController from '../src/controllers/user/user.controller';
+import * as userValidator from '../src/controllers/user/user.validator';
 
 describe('User Repository', () => {
   const userIdTest1 = uuid();
@@ -225,9 +226,6 @@ describe('User Controller', () => {
     roles: [mockRoleInfo],
   });
 
-  const mockReq = mockDeep<Request>();
-  const mockRes = mockDeep<Response>();
-
   describe('[POST] 201 /user', () => {
     const {
       id: _id,
@@ -237,6 +235,13 @@ describe('User Controller', () => {
     } = mockUserInfo;
 
     const createController = userController.createController(mockUserRepo);
+
+    const mockReq = mock<Request>();
+    const mockRes = mock<Response>();
+
+    mockRes.status.mockReturnThis();
+    mockRes.json.mockReturnThis();
+
     mockReq.body = {
       ...rest,
       address: mockAddressInfo,
@@ -247,19 +252,109 @@ describe('User Controller', () => {
       await createController(mockReq, mockRes);
     });
 
-    test('it should return 201 if a user was created', async () => {
-      mockRes.status.mockImplementationOnce((_code) => {
-        return mockRes;
-      });
+    test('it should return 201 if an user was created', async () => {
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+    });
 
-      expect(mockRes.status.mockReturnThis()).toHaveBeenCalledWith(201);
+    test('it should return an user', async () => {
       expect(mockRes.json).toHaveBeenCalledWith({
-        ...mockUserInfo,
-        address: mockAddressInfo,
-        roles: [mockRoleInfo],
+        status: 'success',
+        data: {
+          ...mockUserInfo,
+          address: mockAddressInfo,
+          roles: [mockRoleInfo],
+        },
+      });
+    });
+  });
+
+  describe('[POST] 400 /user', () => {
+    const createController = userController.createController(mockUserRepo);
+
+    const mockReq = mock<Request>();
+    const mockRes = mock<Response>();
+
+    mockRes.status.mockReturnThis();
+    mockRes.json.mockReturnThis();
+
+    mockReq.body = {
+      id: '1',
+    };
+
+    const { error } = userValidator.create.validate(mockReq.body);
+
+    beforeAll(async () => {
+      await createController(mockReq, mockRes);
+    });
+
+    test('it should return 400 if the validator have failed', async () => {
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+    });
+
+    test('it should return an error message from Joi', async () => {
+      expect(mockRes.json).toHaveBeenCalledWith({
+        status: 'fail',
+        data: error,
       });
     });
 
-    test('it should return an user if 201 was the status', async () => {});
+    test('it should return 400 if a prisma validation error was thrown', async () => {
+      mockReset(mockReq);
+      const {
+        id: _id,
+        created_at: _created,
+        updated_at: _updated,
+        ...rest
+      } = mockUserInfo;
+
+      mockReq.body = {
+        ...rest,
+        address: mockAddressInfo,
+        role: mockRoleInfo.role,
+      };
+
+      mockUserRepo.createUser.mockRejectedValueOnce(
+        new PrismaClientKnownRequestError(
+          'user create error',
+          'P2002',
+          'client version'
+        )
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+    });
+  });
+
+  describe('[POST] 500 /user', () => {
+    const {
+      id: _id,
+      created_at: _created,
+      updated_at: _updated,
+      ...rest
+    } = mockUserInfo;
+
+    const createController = userController.createController(mockUserRepo);
+
+    const mockReq = mock<Request>();
+    const mockRes = mock<Response>();
+
+    mockRes.status.mockReturnThis();
+    mockRes.json.mockReturnThis();
+
+    mockReq.body = {
+      ...rest,
+      address: mockAddressInfo,
+      role: mockRoleInfo.role,
+    };
+
+    beforeAll(async () => {
+      await createController(mockReq, mockRes);
+    });
+
+    test('it should return 500 if an Error was thrown', async () => {
+      mockUserRepo.createUser.mockRejectedValueOnce(
+        new Error('Internal error')
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+    });
   });
 });
