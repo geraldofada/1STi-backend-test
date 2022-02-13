@@ -136,8 +136,71 @@ const list = async (
   }
 };
 
-const update = async (req: Request, res: Response) => {};
-const remove = async (req: Request, res: Response) => {};
+const update = async (
+  req: Request,
+  res: Response,
+  userRepository: IUserRepository
+) => {
+  const { value, error } = validator.update.validate({
+    ...req.body,
+    ...req.params,
+  });
+  if (error) return jsend.fail(res, 400, error);
+
+  try {
+    let hashPassword;
+    if (value.password) hashPassword = await hashString(value.password);
+
+    const { address, ...rest } = value;
+    const user = await userRepository.updateUser({
+      ...rest,
+      password: hashPassword,
+      address: {
+        update: {
+          ...address,
+        },
+      },
+    });
+
+    return jsend.success(res, 200, user);
+  } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      return jsend.fail(res, 400, err.message);
+    }
+
+    if (err instanceof Error) {
+      return jsend.error(res, 500, 'An internal error occurred.', {
+        code: 500,
+        data: err.message,
+      });
+    }
+
+    return jsend.error(res, 500, 'An internal error occurred.', null);
+  }
+};
+const remove = async (
+  req: Request,
+  res: Response,
+  userRepository: IUserRepository
+) => {
+  const { value, error } = validator.remove.validate(req.params);
+  if (error) return jsend.fail(res, 400, error);
+
+  try {
+    const user = await userRepository.deleteUser({ id: value.id });
+
+    return jsend.success(res, 200, user);
+  } catch (err) {
+    if (err instanceof Error) {
+      return jsend.error(res, 500, 'An internal error occurred.', {
+        code: 500,
+        data: err.message,
+      });
+    }
+
+    return jsend.error(res, 500, 'An internal error occurred.', null);
+  }
+};
 
 const getByIdController =
   (userRepo: IUserRepository): ExpressRouterFunc =>
@@ -163,9 +226,23 @@ const createController =
     await create(req, res, userRepo);
   };
 
+const updateController =
+  (userRepo: IUserRepository): ExpressRouterFunc =>
+  async (req: Request, res: Response) => {
+    await update(req, res, userRepo);
+  };
+
+const deleteController =
+  (userRepo: IUserRepository): ExpressRouterFunc =>
+  async (req: Request, res: Response) => {
+    await remove(req, res, userRepo);
+  };
+
 export {
   getByIdController,
   getByCpfController,
   listController,
   createController,
+  updateController,
+  deleteController,
 };

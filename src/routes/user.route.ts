@@ -15,8 +15,8 @@ router.get('/:id', controller.getByIdController(userRepository));
 router.get('/cpf/:cpf', controller.getByCpfController(userRepository));
 router.get('/', controller.listController(userRepository));
 
-// router.put('/:id', controller.update);
+router.put('/:id', controller.updateController(userRepository));
 
-// router.delete('/:id', controller.remove);
+router.delete('/:id', controller.deleteController(userRepository));
 
 export default router;

@@ -23,6 +23,8 @@ type UserQuery = {
   limit?: number;
 };
 
+type UserDelete = { id: string };
+
 const userDefaultSelect = Prisma.validator<Prisma.UserArgs>()({
   select: {
     id: true,
@@ -120,10 +122,20 @@ const getUserList = async (query: UserQuery) => {
   return user;
 };
 
+const deleteUser = async (id: UserDelete) => {
+  const deletedUser = await prisma.user.delete({
+    where: id,
+    select: userDefaultSelect.select,
+  });
+
+  return deletedUser;
+};
+
 type User =
   | Prisma.PromiseReturnType<typeof getUser>
   | Prisma.PromiseReturnType<typeof createUser>
-  | Prisma.PromiseReturnType<typeof updateUser>;
+  | Prisma.PromiseReturnType<typeof updateUser>
+  | Prisma.PromiseReturnType<typeof deleteUser>;
 type UserList = Prisma.PromiseReturnType<typeof getUserList>;
 
 interface IUserRepository {
@@ -131,6 +143,7 @@ interface IUserRepository {
   updateUser: (data: UserUpdate) => Promise<User>;
   getUser: (key: UserGet) => Promise<User>;
   getUserList: (query: UserQuery) => Promise<UserList>;
+  deleteUser: (id: UserDelete) => Promise<User>;
 }
 
 const userRepository: IUserRepository = {
@@ -138,6 +151,7 @@ const userRepository: IUserRepository = {
   updateUser,
   getUser,
   getUserList,
+  deleteUser,
 };
 
 export { IUserRepository, userRepository };
