@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import jwt from 'jsonwebtoken';
 
 // import redis from '../../clients/redis.client';
 
@@ -7,7 +8,8 @@ import * as validator from './user.validator';
 import { IUserRepository } from './user.repository';
 
 import * as jsend from '../../utils/jsend.util';
-import hashString from '../../utils/crypto.utils';
+import { hashString, isHashCorrect } from '../../utils/crypto.utils';
+import { IAuthRepository } from '../auth/auth.repository';
 
 type ExpressRouterFunc = (
   req: Request,
@@ -15,8 +17,100 @@ type ExpressRouterFunc = (
   next?: NextFunction
 ) => void | Promise<void>;
 
-const login = async (req: Request, res: Response) => {};
-const signup = async (req: Request, res: Response) => {};
+const login = async (
+  req: Request,
+  res: Response,
+  authReporitory: IAuthRepository
+) => {
+  const { error, value } = validator.login.validate(req.body);
+  if (error) {
+    return jsend.fail(res, 400, error);
+  }
+
+  try {
+    const user = (await authReporitory.getUserPassword({
+      email: value.email,
+    })) as { id: string; password: string };
+
+    if (!user) {
+      return jsend.fail(res, 400, {
+        message: 'Invalid email or password',
+      });
+    }
+
+    const isPasswordCorrect = await isHashCorrect(
+      user.password,
+      value.password
+    );
+
+    if (!isPasswordCorrect) {
+      return jsend.fail(res, 400, {
+        message: 'Invalid email or password',
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        user: {
+          id: user.id,
+        },
+        createdAt: new Date(),
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '3h' }
+    );
+
+    return jsend.success(res, 201, token);
+  } catch (err) {
+    if (err instanceof Error) {
+      return jsend.error(res, 500, 'An internal error occurred.', {
+        code: 500,
+        data: err.message,
+      });
+    }
+
+    return jsend.error(res, 500, 'An internal error occurred.', null);
+  }
+};
+
+const signup = async (
+  req: Request,
+  res: Response,
+  userRepository: IUserRepository
+) => {
+  const { value, error } = validator.signup.validate(req.body);
+  if (error) return jsend.fail(res, 400, error);
+
+  try {
+    const hashPassword = await hashString(value.password);
+
+    const { address, ...rest } = value;
+    const user = await userRepository.createUser({
+      ...rest,
+      password: hashPassword,
+      address: {
+        create: {
+          ...address,
+        },
+      },
+    });
+
+    return jsend.success(res, 201, user);
+  } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      return jsend.fail(res, 400, err.message);
+    }
+
+    if (err instanceof Error) {
+      return jsend.error(res, 500, 'An internal error occurred.', {
+        code: 500,
+        data: err.message,
+      });
+    }
+
+    return jsend.error(res, 500, 'An internal error occurred.', null);
+  }
+};
 
 const create = async (
   req: Request,
@@ -202,6 +296,18 @@ const remove = async (
   }
 };
 
+const loginController =
+  (authRepo: IAuthRepository): ExpressRouterFunc =>
+  async (req: Request, res: Response) => {
+    await login(req, res, authRepo);
+  };
+
+const signupController =
+  (userRepo: IUserRepository): ExpressRouterFunc =>
+  async (req: Request, res: Response) => {
+    await signup(req, res, userRepo);
+  };
+
 const getByIdController =
   (userRepo: IUserRepository): ExpressRouterFunc =>
   async (req: Request, res: Response) => {
@@ -235,10 +341,12 @@ const updateController =
 const deleteController =
   (userRepo: IUserRepository): ExpressRouterFunc =>
   async (req: Request, res: Response) => {
-    await remove(req, res, userRepo);
+    remove(req, res, userRepo);
   };
 
 export {
+  loginController,
+  signupController,
   getByIdController,
   getByCpfController,
   listController,

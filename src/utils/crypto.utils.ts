@@ -3,7 +3,7 @@ import { promisify } from 'util';
 
 const pbkdf2 = promisify(crypto.pbkdf2);
 
-const hashString = async (value: string) => {
+const hashString = async (value: string): Promise<string> => {
   const salt = process.env.SALT_KEY!;
   const iterations = parseInt(process.env.ITERATIONS_PWD!, 10);
 
@@ -12,4 +12,13 @@ const hashString = async (value: string) => {
   return hashBuffer.toString('hex');
 };
 
-export default hashString;
+const isHashCorrect = async (
+  rawValue: string,
+  hashToCompare: string
+): Promise<boolean> => {
+  const hashedValue = await hashString(rawValue);
+
+  return hashToCompare === hashedValue;
+};
+
+export { hashString, isHashCorrect };

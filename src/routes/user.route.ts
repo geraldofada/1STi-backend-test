@@ -4,11 +4,12 @@ import { Router } from 'express';
 import * as controller from '../controllers/user/user.controller';
 
 import { userRepository } from '../controllers/user/user.repository';
+import { authRepository } from '../controllers/auth/auth.repository';
 
 const router = Router();
 
-// router.post('/signup', controller.signup);
-// router.post('/login', controller.login);
+router.post('/signup', controller.signupController(userRepository));
+router.post('/login', controller.loginController(authRepository));
 router.post('/', controller.createController(userRepository));
 
 router.get('/:id', controller.getByIdController(userRepository));
