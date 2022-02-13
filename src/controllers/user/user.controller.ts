@@ -2,8 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import jwt from 'jsonwebtoken';
 
-// import redis from '../../clients/redis.client';
-
 import * as validator from './user.validator';
 import { IUserRepository } from './user.repository';
 
