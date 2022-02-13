@@ -69,6 +69,13 @@ const list = Joi.object({
   email: Joi.string(),
   name: Joi.string(),
   phone: Joi.string(),
+  cep: Joi.string(),
+  line1: Joi.string(),
+  number: Joi.string(),
+  line2: Joi.string(),
+  city: Joi.string(),
+  state: Joi.string(),
+  district: Joi.string(),
   page: Joi.number(),
   limit: Joi.number(),
 });
