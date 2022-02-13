@@ -3,6 +3,8 @@ import prisma from '../../clients/prisma.client';
 
 type UserCreate = Prisma.UserCreateInput;
 
+type UserUpdate = Prisma.UserUpdateInput;
+
 type UserGet = Prisma.UserWhereUniqueInput;
 
 type UserQuery = {
@@ -58,6 +60,22 @@ const createUser = async (user: UserCreate) => {
   return userCreated;
 };
 
+const updateUser = async (data: UserUpdate) => {
+  if (!data.id) return null;
+
+  const { id, ...rest } = data;
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: id as string,
+    },
+    data: { ...rest },
+    select: userDefaultSelect.select,
+  });
+
+  return updatedUser;
+};
+
 const getUser = async (key: UserGet) => {
   const user = await prisma.user.findUnique({
     where: key,
@@ -104,17 +122,20 @@ const getUserList = async (query: UserQuery) => {
 
 type User =
   | Prisma.PromiseReturnType<typeof getUser>
-  | Prisma.PromiseReturnType<typeof createUser>;
+  | Prisma.PromiseReturnType<typeof createUser>
+  | Prisma.PromiseReturnType<typeof updateUser>;
 type UserList = Prisma.PromiseReturnType<typeof getUserList>;
 
 interface IUserRepository {
   createUser: (user: UserCreate) => Promise<User>;
+  updateUser: (data: UserUpdate) => Promise<User>;
   getUser: (key: UserGet) => Promise<User>;
   getUserList: (query: UserQuery) => Promise<UserList>;
 }
 
 const userRepository: IUserRepository = {
   createUser,
+  updateUser,
   getUser,
   getUserList,
 };

@@ -194,6 +194,49 @@ describe('User Repository', () => {
       userRepository.getUserList({ cpf: userCpfTest1 })
     ).resolves.toEqual([userReturnTest1]);
   });
+
+  test('it should update and return the updated user', async () => {
+    // NOTE(Geraldo): to mandando o updateAt pra conseguir compara o resultado depois
+    const updatedAt = new Date();
+
+    const userInfo = {
+      name: 'Geraldo Update',
+      email: 'teste29@teste.com',
+      updated_at: updatedAt,
+    };
+    const addressInfo = {
+      cep: '09500009',
+      line1: 'Rua la',
+      number: '111',
+    };
+
+    const userUpdateInput = {
+      id: userIdTest1,
+      ...userInfo,
+      address: {
+        update: addressInfo,
+      },
+    };
+
+    const { password: _pass1, ...restTest1 } = userInfoTest1;
+    const userReturn = {
+      ...restTest1,
+      name: 'Geraldo Update',
+      email: 'teste29@teste.com',
+      updated_at: updatedAt,
+      address: {
+        ...addressInfoTest1,
+        cep: '09500009',
+        line1: 'Rua la',
+        number: '111',
+      },
+      roles: [roleInfoTest1],
+    };
+
+    await expect(userRepository.updateUser(userUpdateInput)).resolves.toEqual(
+      userReturn
+    );
+  });
 });
 
 describe('User Controller', () => {
