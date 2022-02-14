@@ -82,13 +82,18 @@ const signup = async (
   try {
     const hashPassword = await hashString(value.password);
 
-    const { address, ...rest } = value;
+    const { passwordConfirmation: _, address, ...rest } = value;
     const user = await userRepository.createUser({
       ...rest,
       password: hashPassword,
       address: {
         create: {
           ...address,
+        },
+      },
+      roles: {
+        create: {
+          role: 'USER',
         },
       },
     });
@@ -215,7 +220,12 @@ const list = async (
       ...value,
     });
 
-    return jsend.success(res, 200, userList);
+    return jsend.success(res, 200, {
+      users: userList,
+      page: value.page,
+      limit: value.limit,
+      total: userList.length,
+    });
   } catch (err) {
     if (err instanceof Error) {
       return jsend.error(res, 500, 'An internal error occurred.', {
