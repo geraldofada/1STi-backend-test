@@ -937,13 +937,18 @@ describe('User Controller', () => {
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
           status: 'success',
-          data: [
-            {
-              ...mockUserInfo,
-              address: mockAddressInfo,
-              roles: [mockRoleInfo],
-            },
-          ],
+          data: {
+            users: [
+              {
+                ...mockUserInfo,
+                address: mockAddressInfo,
+                roles: [mockRoleInfo],
+              },
+            ],
+            limit: undefined,
+            page: undefined,
+            total: 1,
+          },
         });
       });
 
@@ -954,7 +959,12 @@ describe('User Controller', () => {
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
           status: 'success',
-          data: [],
+          data: {
+            users: [],
+            limit: undefined,
+            page: undefined,
+            total: 0,
+          },
         });
       });
     });

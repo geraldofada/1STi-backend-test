@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 import jwt from 'jsonwebtoken';
