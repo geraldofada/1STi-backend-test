@@ -29,10 +29,10 @@ services:
         ports:
             - 6379:6379
 
-volumes:
-    node_modules:
-        driver: local
-        driver_opts:
-            type: none
-            o: bind
-            device: ./node_modules
+# volumes:
+#     node_modules:
+#         driver: local
+#         driver_opts:
+#             type: none
+#             o: bind
+#             device: ./node_modules
