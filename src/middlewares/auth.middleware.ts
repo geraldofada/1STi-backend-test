@@ -50,7 +50,6 @@ const auth = async (
     }
 
     req.userAuthId = user.id;
-
     return next();
   } catch (error) {
     return jsend.fail(res, 401, {
