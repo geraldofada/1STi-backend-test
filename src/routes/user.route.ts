@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-// const { apiAuth, apiAuthAdmin } = require('../middleware/api_auth');
+import authController from '../middlewares/auth.middleware';
 import * as controller from '../controllers/user/user.controller';
 
 import { userRepository } from '../controllers/user/user.repository';
@@ -10,14 +10,38 @@ const router = Router();
 
 router.post('/signup', controller.signupController(userRepository));
 router.post('/login', controller.loginController(authRepository));
-router.post('/', controller.createController(userRepository));
+router.post(
+  '/',
+  authController(['ADMIN'], authRepository),
+  controller.createController(userRepository)
+);
 
-router.get('/:id', controller.getByIdController(userRepository));
-router.get('/cpf/:cpf', controller.getByCpfController(userRepository));
-router.get('/', controller.listController(userRepository));
+router.get(
+  '/:id',
+  authController(['ADMIN', 'USER'], authRepository),
+  controller.getByIdController(userRepository)
+);
+router.get(
+  '/cpf/:cpf',
+  authController(['ADMIN'], authRepository),
+  controller.getByCpfController(userRepository)
+);
+router.get(
+  '/',
+  authController(['ADMIN'], authRepository),
+  controller.listController(userRepository)
+);
 
-router.put('/:id', controller.updateController(userRepository));
+router.put(
+  '/:id',
+  authController(['ADMIN'], authRepository),
+  controller.updateController(userRepository)
+);
 
-router.delete('/:id', controller.deleteController(userRepository));
+router.delete(
+  '/:id',
+  authController(['ADMIN'], authRepository),
+  controller.deleteController(userRepository)
+);
 
 export default router;
