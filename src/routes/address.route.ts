@@ -1,6 +1,5 @@
 import { Router } from 'express';
 
-// const { apiAuth, apiAuthAdmin } = require('../middleware/api_auth');
 import controller from '../controllers/address/address.controller';
 
 import { addressRepository } from '../controllers/address/address.repository';
