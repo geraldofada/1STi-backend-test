@@ -27,8 +27,14 @@ O script de test faz o seguinte:
 - Roda os testes usando Jest
 - Limpa o ambiente de testes
 
+Caso algum teste falhe, é possível rodar novamente usando o seguinte comando:
+``` 
+$ npm run test:retry
+```
+
 ---
 
 Para inicializar o ambiente de produção:
 ```
 $ docker-compose -f docker-compose.prod.yml up
+```
