@@ -10,8 +10,8 @@ services:
             - NODE_ENV=production
             - DATABASE_URL=postgresql://postgres:senha123@postgres-prod:5432/1STi_prod?schema=public
             - REDIS_URL=redis://redis-prod:6379
-            - SALT_KEY=aaaaaaaaaaaa
-            - JWT_SECRET=aaaaaaaaaaaaa
+            - SALT_KEY=asdfqweproiu
+            - JWT_SECRET=qwerpoiuzxcv
             - ITERATIONS_PWD=10000
         ports:
             - 8080:8080
