@@ -270,6 +270,7 @@ const update = async (
     return jsend.error(res, 500, 'An internal error occurred.', null);
   }
 };
+
 const remove = async (
   req: Request,
   res: Response,

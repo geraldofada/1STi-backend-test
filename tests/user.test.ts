@@ -4,6 +4,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { v4 as uuid } from 'uuid';
 import { mock } from 'jest-mock-extended';
 
+import { info } from 'console';
 import {
   userRepository,
   IUserRepository,
@@ -307,6 +308,15 @@ describe('User Controller', () => {
       roles: [mockRoleInfo],
     },
   ]);
+  mockUserRepo.updateUser.mockResolvedValue({
+    ...mockUserInfo,
+    name: 'Geraldo update',
+    address: {
+      ...mockAddressInfo,
+      cep: '24120344',
+    },
+    roles: [mockRoleInfo],
+  });
 
   describe('[POST] /user', () => {
     describe('201', () => {
@@ -858,6 +868,129 @@ describe('User Controller', () => {
           new Error('Internal error')
         );
         await listController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenCalledWith(500);
+      });
+    });
+  });
+
+  describe('[PUT] /user/:id', () => {
+    describe('200', () => {
+      const updatedController = userController.updateController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        id: mockUserInfo.id,
+      };
+      mockReq.body = {
+        name: 'Geraldo update',
+        address: {
+          cep: '24120344',
+        },
+      };
+
+      beforeAll(async () => {
+        await updatedController(mockReq, mockRes);
+      });
+
+      test('it should return 200 if an user was created', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+      });
+
+      test('it should return an user', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'success',
+          data: {
+            ...mockUserInfo,
+            name: 'Geraldo update',
+            address: {
+              ...mockAddressInfo,
+              cep: '24120344',
+            },
+            roles: [mockRoleInfo],
+          },
+        });
+      });
+    });
+
+    describe('400', () => {
+      const updateController = userController.updateController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        id: '1',
+      };
+
+      const { error } = userValidator.update.validate(mockReq.params);
+
+      beforeAll(async () => {
+        await updateController(mockReq, mockRes);
+      });
+
+      test('it should return 400 if the validator have failed', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+      });
+
+      test('it should return an error message from Joi', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'fail',
+          data: error,
+        });
+      });
+
+      test('it should return 400 if a prisma validation error was thrown', async () => {
+        const mockReq2 = mock<Request>();
+
+        mockReq2.params = {
+          id: mockUserInfo.id,
+        };
+        mockReq2.body = {
+          name: 'Geraldo Update',
+        };
+
+        mockUserRepo.updateUser.mockRejectedValueOnce(
+          new PrismaClientKnownRequestError(
+            'user create error',
+            'P2002',
+            'client version'
+          )
+        );
+
+        await updateController(mockReq2, mockRes);
+        expect(mockRes.status).toHaveBeenLastCalledWith(400);
+      });
+    });
+
+    describe('500', () => {
+      const updateController = userController.updateController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        id: mockUserInfo.id,
+      };
+      mockReq.body = {
+        name: 'Geraldo Update',
+      };
+
+      test('it should return 500 if an Error was thrown', async () => {
+        mockUserRepo.updateUser.mockRejectedValueOnce(
+          new Error('Internal error')
+        );
+        await updateController(mockReq, mockRes);
         expect(mockRes.status).toHaveBeenCalledWith(500);
       });
     });
