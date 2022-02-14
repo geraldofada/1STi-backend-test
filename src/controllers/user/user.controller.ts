@@ -28,7 +28,7 @@ const login = async (
   try {
     const user = (await authReporitory.getUserPassword({
       email: value.email,
-    })) as { id: string; password: string };
+    })) as { id: string; password: string } | null;
 
     if (!user) {
       return jsend.fail(res, 400, {
@@ -37,8 +37,8 @@ const login = async (
     }
 
     const isPasswordCorrect = await isHashCorrect(
-      user.password,
-      value.password
+      value.password,
+      user.password
     );
 
     if (!isPasswordCorrect) {
@@ -58,7 +58,7 @@ const login = async (
       { expiresIn: '3h' }
     );
 
-    return jsend.success(res, 201, token);
+    return jsend.success(res, 200, token);
   } catch (err) {
     if (err instanceof Error) {
       return jsend.error(res, 500, 'An internal error occurred.', {

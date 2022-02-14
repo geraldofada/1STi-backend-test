@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { userRepository } from '../src/controllers/user/user.repository';
 import { authRepository } from '../src/controllers/auth/auth.repository';
 
-describe('User Repository', () => {
+describe('Auth Repository', () => {
   const userIdTest1 = uuid();
   const userCpfTest1 = '99245152006';
   const userInfoTest1 = {

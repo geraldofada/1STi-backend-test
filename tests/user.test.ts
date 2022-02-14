@@ -3,15 +3,19 @@ import { Request, Response } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { v4 as uuid } from 'uuid';
 import { mock } from 'jest-mock-extended';
+import jwt from 'jsonwebtoken';
 
-import { info } from 'console';
 import {
   userRepository,
   IUserRepository,
 } from '../src/controllers/user/user.repository';
 
+import { IAuthRepository } from '../src/controllers/auth/auth.repository';
+
 import * as userController from '../src/controllers/user/user.controller';
 import * as userValidator from '../src/controllers/user/user.validator';
+
+import { hashString } from '../src/utils/crypto.utils';
 
 describe('User Repository', () => {
   const userIdTest1 = uuid();
@@ -584,6 +588,137 @@ describe('User Controller', () => {
           new Error('Internal error')
         );
         await signupController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenCalledWith(500);
+      });
+    });
+  });
+
+  describe('[POST] /user/login', () => {
+    const mockAuthRepo = mock<IAuthRepository>();
+
+    beforeAll(async () => {
+      const hashPassword = await hashString(mockUserInfo.password);
+      mockAuthRepo.getUserPassword.mockResolvedValue({
+        id: mockUserInfo.id,
+        password: hashPassword,
+      });
+    });
+
+    describe('200', () => {
+      const loginController = userController.loginController(mockAuthRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
+        password: mockUserInfo.password,
+        email: mockUserInfo.email,
+      };
+
+      beforeAll(async () => {
+        await loginController(mockReq, mockRes);
+      });
+
+      test('it should return 200 if an user was logged in', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+      });
+
+      test('it should return a token', async () => {
+        jest.mock('jsonwebtoken');
+
+        const token = 'token';
+
+        const mockSign = jest.spyOn(jwt, 'sign');
+        mockSign.mockImplementation(() => token);
+
+        await loginController(mockReq, mockRes);
+
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'success',
+          data: token,
+        });
+      });
+    });
+
+    describe('400', () => {
+      const loginController = userController.loginController(mockAuthRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
+        id: '1',
+      };
+
+      const { error } = userValidator.login.validate(mockReq.body);
+
+      beforeAll(async () => {
+        await loginController(mockReq, mockRes);
+      });
+
+      test('it should return 400 if the validator have failed', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+      });
+
+      test('it should return an error message from Joi', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'fail',
+          data: error,
+        });
+      });
+
+      test('it should return 400 if the user was not found', async () => {
+        mockReq.body = {
+          password: mockUserInfo.password,
+          email: mockUserInfo.email,
+        };
+
+        mockAuthRepo.getUserPassword.mockResolvedValue(null);
+
+        await loginController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenLastCalledWith(400);
+      });
+
+      test('it should return 400 if the credentials were incorrect', async () => {
+        mockReq.body = {
+          email: 'emailquenaoexiste@teste.com',
+          password: '1234',
+        };
+
+        await loginController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenLastCalledWith(400);
+      });
+    });
+
+    describe('500', () => {
+      const loginController = userController.loginController(mockAuthRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.body = {
+        password: mockUserInfo.password,
+        email: mockUserInfo.email,
+      };
+
+      beforeAll(async () => {
+        await loginController(mockReq, mockRes);
+      });
+
+      test('it should return 500 if an Error was thrown', async () => {
+        mockAuthRepo.getUserPassword.mockRejectedValueOnce(
+          new Error('Internal error')
+        );
+        await loginController(mockReq, mockRes);
         expect(mockRes.status).toHaveBeenCalledWith(500);
       });
     });
