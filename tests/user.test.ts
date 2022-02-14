@@ -317,6 +317,11 @@ describe('User Controller', () => {
     },
     roles: [mockRoleInfo],
   });
+  mockUserRepo.deleteUser.mockResolvedValue({
+    ...mockUserInfo,
+    address: mockAddressInfo,
+    roles: [mockRoleInfo],
+  });
 
   describe('[POST] /user', () => {
     describe('201', () => {
@@ -991,6 +996,115 @@ describe('User Controller', () => {
           new Error('Internal error')
         );
         await updateController(mockReq, mockRes);
+        expect(mockRes.status).toHaveBeenCalledWith(500);
+      });
+    });
+  });
+
+  describe('[DELETE] /user/:id', () => {
+    describe('200', () => {
+      const deleteController = userController.deleteController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        id: mockUserInfo.id,
+      };
+
+      beforeAll(async () => {
+        await deleteController(mockReq, mockRes);
+      });
+
+      test('it should return 200 if an user was deleted', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+      });
+
+      test('it should return the deleted user', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'success',
+          data: {
+            ...mockUserInfo,
+            address: {
+              ...mockAddressInfo,
+            },
+            roles: [mockRoleInfo],
+          },
+        });
+      });
+    });
+
+    describe('400', () => {
+      const deleteController = userController.deleteController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        id: '1',
+      };
+
+      const { error } = userValidator.remove.validate(mockReq.params);
+
+      beforeAll(async () => {
+        await deleteController(mockReq, mockRes);
+      });
+
+      test('it should return 400 if the validator have failed', () => {
+        expect(mockRes.status).toHaveBeenCalledWith(400);
+      });
+
+      test('it should return an error message from Joi', () => {
+        expect(mockRes.json).toHaveBeenCalledWith({
+          status: 'fail',
+          data: error,
+        });
+      });
+
+      test('it should return 400 if a prisma validation error was thrown', async () => {
+        const mockReq2 = mock<Request>();
+
+        mockReq2.params = {
+          id: uuid(),
+        };
+
+        mockUserRepo.deleteUser.mockRejectedValueOnce(
+          new PrismaClientKnownRequestError(
+            'user delete error',
+            'P2025',
+            'client version'
+          )
+        );
+
+        await deleteController(mockReq2, mockRes);
+        expect(mockRes.status).toHaveBeenLastCalledWith(400);
+      });
+    });
+
+    describe('500', () => {
+      const deleteController = userController.deleteController(mockUserRepo);
+
+      const mockReq = mock<Request>();
+      const mockRes = mock<Response>();
+
+      mockRes.status.mockReturnThis();
+      mockRes.json.mockReturnThis();
+
+      mockReq.params = {
+        id: mockUserInfo.id,
+      };
+
+      test('it should return 500 if an Error was thrown', async () => {
+        mockUserRepo.deleteUser.mockRejectedValueOnce(
+          new Error('Internal error')
+        );
+        await deleteController(mockReq, mockRes);
         expect(mockRes.status).toHaveBeenCalledWith(500);
       });
     });
