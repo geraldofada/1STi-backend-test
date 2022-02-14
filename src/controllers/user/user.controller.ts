@@ -284,6 +284,10 @@ const remove = async (
 
     return jsend.success(res, 200, user);
   } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2025') {
+      return jsend.fail(res, 400, err.message);
+    }
+
     if (err instanceof Error) {
       return jsend.error(res, 500, 'An internal error occurred.', {
         code: 500,
@@ -340,7 +344,7 @@ const updateController =
 const deleteController =
   (userRepo: IUserRepository): ExpressRouterFunc =>
   async (req: Request, res: Response) => {
-    remove(req, res, userRepo);
+    await remove(req, res, userRepo);
   };
 
 export {
