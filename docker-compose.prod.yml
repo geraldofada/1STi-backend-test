@@ -7,14 +7,15 @@ services:
             - postgres-prod
             - redis-prod
         environment:
+            - NODE_ENV=production
             - DATABASE_URL=postgresql://postgres:senha123@postgres-prod:5432/1STi_prod?schema=public
             - REDIS_URL=redis://redis-prod:6379
-            - SALT_KEY=
-            - JWT_SECRET=
-            - ITERATIONS_PWD=
+            - SALT_KEY=aaaaaaaaaaaa
+            - JWT_SECRET=aaaaaaaaaaaaa
+            - ITERATIONS_PWD=10000
         ports:
             - 8080:8080
-        command: bash -c "npx prisma migrate deploy && npm start"
+        command: bash -c "npx prisma migrate deploy && npm run build && npm start"
 
     postgres-prod:
         image: postgres
